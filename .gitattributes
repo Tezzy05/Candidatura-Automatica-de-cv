@@ -1,0 +1,2 @@
+# .bat precisa de quebra de linha do Windows (CRLF), inclusive no ZIP baixado do GitHub.
+*.bat -text

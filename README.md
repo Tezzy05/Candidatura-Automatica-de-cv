@@ -54,6 +54,23 @@ A integração com o Claude (`src/lib/ai.ts`) está pronta mas desligada: não a
 
 ## Rodar no computador
 
+### Windows, sem saber programar
+
+1. No GitHub, clique em **Code → Download ZIP**.
+2. Clique no ZIP com o botão direito e escolha **Extrair tudo**.
+3. Dentro da pasta extraída, dê dois cliques em **`iniciar.bat`**.
+
+Na primeira vez ele confere se o Node.js está instalado (se não estiver, oferece instalar pelo winget ou abre a página de download) e baixa as dependências, o que leva 1 ou 2 minutos. Depois o navegador abre sozinho no app. Para encerrar, feche a janela preta.
+
+| Comando | O que faz |
+|---|---|
+| `iniciar.bat` | abre neste computador |
+| `iniciar.bat lan` | também abre no celular, na mesma rede Wi-Fi (o Windows pode pedir para liberar no firewall) |
+
+Seu perfil e o histórico ficam salvos no navegador, não na pasta. Ao baixar uma versão nova do projeto, eles continuam lá, desde que você use o mesmo navegador e o mesmo endereço (`http://localhost:5173`).
+
+### Para quem desenvolve
+
 ```bash
 npm install
 npm run dev      # http://localhost:5173
