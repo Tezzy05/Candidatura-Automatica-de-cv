@@ -1,4 +1,4 @@
-import { Download, FileUp, Settings, Sparkles, Upload, UserRound } from 'lucide-react'
+import { Download, FileUp, Settings, ShieldCheck, Sparkles, Upload, UserRound } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { ImportDialog, SettingsDialog } from '@/components/Dialogs'
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Toaster } from '@/components/ui/sonner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { MODELS, type AiSettings } from '@/lib/ai-config'
+import { AI_ENABLED, MODELS, type AiSettings } from '@/lib/ai-config'
 import { emptyProfile, sampleJob, sampleProfile } from '@/lib/sample'
 import { downloadJson, useStored } from '@/lib/storage'
 import type { Job, Profile, Tailored } from '@/lib/types'
@@ -21,7 +21,9 @@ type Tab = 'vaga' | 'perfil' | 'historico'
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('vaga')
-  const [profile, setProfile] = useStored<Profile>('profile', emptyProfile())
+  const [storedProfile, setProfile] = useStored<Profile>('profile', emptyProfile())
+  // Perfis salvos por versões anteriores podem não ter campos novos (ex.: concordância).
+  const profile = { ...emptyProfile(), ...storedProfile }
   const [job, setJob] = useStored<Job>('job', { title: '', company: '', location: '', description: '' })
   const [history, setHistory] = useStored<Tailored[]>('history', [])
   const [settings, setSettings] = useStored<AiSettings>('settings', { apiKey: '', model: MODELS[0].id })
@@ -40,6 +42,11 @@ export default function App() {
   const onResult = (t: Tailored) => {
     setResult(t)
     setHistory((h) => [t, ...h].slice(0, 50))
+  }
+
+  const onEdit = (t: Tailored) => {
+    setResult(t)
+    setHistory((h) => h.map((x) => (x.id === t.id ? t : x)))
   }
 
   const restoreBackup = async (file: File) => {
@@ -62,12 +69,14 @@ export default function App() {
               <span className="text-brand">▲</span> {APP_NAME}
             </span>
             <span className="hidden text-xs text-muted-foreground sm:inline">· um currículo para cada vaga</span>
-            <div className="ml-auto flex items-center gap-1">
-              <Button variant="ghost" size="sm" onClick={() => setSettingsOpen(true)}>
-                {settings.apiKey ? <Sparkles className="text-brand" /> : <Settings />}
-                <span className="hidden sm:inline">{settings.apiKey ? 'IA ativa' : 'Configurar IA'}</span>
-              </Button>
-            </div>
+            {AI_ENABLED && (
+              <div className="ml-auto flex items-center gap-1">
+                <Button variant="ghost" size="sm" onClick={() => setSettingsOpen(true)}>
+                  {settings.apiKey ? <Sparkles className="text-brand" /> : <Settings />}
+                  <span className="hidden sm:inline">{settings.apiKey ? 'IA ativa' : 'Configurar IA'}</span>
+                </Button>
+              </div>
+            )}
           </div>
         </header>
 
@@ -86,6 +95,7 @@ export default function App() {
                 onJobChange={setJob}
                 result={result}
                 onResult={onResult}
+                onEdit={onEdit}
                 settings={settings}
                 onNeedKey={() => {
                   toast.info('Para usar a IA, coloque sua chave da API da Anthropic.')
@@ -107,7 +117,7 @@ export default function App() {
                   Seu perfil completo, com tudo o que você já fez. Cada vaga recebe um recorte dele. Salvo só neste navegador.
                 </p>
                 <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
-                  <Sparkles /> Importar CV antigo
+                  <FileUp /> Importar CV antigo
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => replaceProfile(sampleProfile)}>
                   Carregar exemplo
@@ -148,11 +158,11 @@ export default function App() {
         </main>
 
         <footer className="mx-auto flex max-w-6xl items-center gap-2 px-4 pb-10 text-xs text-muted-foreground">
-          <FileUp className="size-3.5" /> Nada sai do seu navegador, exceto o que você manda para a IA quando usa "Gerar com IA".
+          <ShieldCheck className="size-3.5" /> Tudo roda no seu navegador. Seu perfil e seus currículos não são enviados para lugar nenhum.
         </footer>
       </div>
 
-      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} settings={settings} onSave={setSettings} />
+      {AI_ENABLED && <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} settings={settings} onSave={setSettings} />}
       <ImportDialog
         open={importOpen}
         onOpenChange={setImportOpen}

@@ -12,6 +12,9 @@ const BULLET = /^\s*([-•*·▪●–]|\d+[.)])\s*/
 
 /** Qualificadores de nível: "Inglês avançado" não é o mesmo que "Inglês intermediário". */
 const LEVEL = /\b(basico|intermediario|avancado|fluente|nativo|tecnico|conversacao)\b/
+/** Ordem dos níveis: ter um nível acima do pedido atende a vaga. */
+const LEVEL_RANK: Record<string, number> = { basico: 1, tecnico: 2, intermediario: 2, conversacao: 3, avancado: 4, fluente: 5, nativo: 6 }
+const levelOf = (s: string) => LEVEL_RANK[fold(s).match(LEVEL)?.[1] ?? ''] ?? 0
 
 /** Competências que outras comprovam: quem usa Power BI faz BI; quem usa AWS conhece Cloud. */
 const IMPLIED_BY: Record<string, string[]> = {
@@ -161,9 +164,14 @@ export function scoreMatch(profile: Profile, job: Job): MatchResult {
     }
     const hit: KeywordHit = { ...kw, evidence }
     // A vaga pede um nível ("avançado") que o perfil não declara: conta pela metade e o currículo mantém o seu nível.
-    if (LEVEL.test(fold(kw.label)) && !containsTerm(corpus, fold(kw.label))) {
-      hit.levelGap = true
-      hit.ownLabel = ownWording(profile, terms) ?? dict.find((e) => e.key === kw.key)?.label ?? kw.label
+    const wanted = levelOf(kw.label)
+    if (wanted && !containsTerm(corpus, fold(kw.label))) {
+      const own = ownWording(profile, terms)
+      // Sem nível declarado ou abaixo do pedido: conta pela metade. Acima do pedido: atende.
+      if (!own || levelOf(own) < wanted) {
+        hit.levelGap = true
+        hit.ownLabel = own ?? dict.find((e) => e.key === kw.key)?.label ?? kw.label
+      }
     }
     matched.push(hit)
   }

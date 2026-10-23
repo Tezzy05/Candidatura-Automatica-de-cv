@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { uid } from '@/lib/text'
-import type { Education, Experience, Profile, Project, ProjectKind } from '@/lib/types'
+import type { Education, Experience, Gender, Profile, Project, ProjectKind } from '@/lib/types'
 
 const KINDS: ProjectKind[] = ['Projeto', 'Voluntariado', 'Empresa júnior', 'Freelance', 'Curso']
 
@@ -89,7 +89,20 @@ export function ProfileEditor({ profile, onChange }: { profile: Profile; onChang
       </Block>
 
       <Block title="Quem você é" hint="Matéria-prima do resumo de 3 linhas. O sistema adapta para cada vaga.">
-        <Field label="Cargo atual ou desejado"><Input {...text('headline')} placeholder="Analista de dados" /></Field>
+        <div className="grid gap-4 sm:grid-cols-[1fr_220px]">
+          <Field label="Cargo atual ou desejado"><Input {...text('headline')} placeholder="Analista de dados" /></Field>
+          <Field label="Nas frases, usar" hint="Para o resumo concordar com você.">
+            <select
+              className="h-9 w-full rounded-md border border-input bg-transparent px-2 text-sm"
+              value={profile.gender}
+              onChange={(e) => set('gender', e.target.value as Gender)}
+            >
+              <option value="masculino">formado em...</option>
+              <option value="feminino">formada em...</option>
+              <option value="neutro">com formação em...</option>
+            </select>
+          </Field>
+        </div>
         <Field label="Sobre você" hint="A primeira frase entra no resumo. Diga o que você entrega.">
           <Textarea rows={3} value={profile.about} onChange={(e) => set('about', e.target.value)} placeholder="Entrego painéis e automações que cortam retrabalho." />
         </Field>

@@ -1,4 +1,5 @@
 import { scoreMatch } from './match'
+import { composeSummary } from './summary'
 import { buildDictionary, type SkillEntry } from './skills'
 import { containsTerm, fold, hasNumber, joinPt, termRegex, uid } from './text'
 import type { Job, KeywordHit, MatchResult, Profile, Resume, Tailored } from './types'
@@ -41,17 +42,6 @@ function relevance(text: string, matched: KeywordHit[], dict: SkillEntry[]): num
   return hits + (hasNumber(text) ? 0.5 : 0)
 }
 
-function yearsOfExperience(profile: Profile): number {
-  const years = profile.experiences.map((e) => Number(e.start.match(/(19|20)\d{2}/)?.[0])).filter(Boolean)
-  return years.length ? new Date().getFullYear() - Math.min(...years) : 0
-}
-
-function firstSentence(text: string): string {
-  const t = text.trim().replace(/\s+/g, ' ')
-  const m = t.match(/^.+?[.!?](\s|$)/)
-  return (m ? m[0] : t).trim()
-}
-
 const WEAK_START = /^(responsavel por|fazia|fazer|realizava|auxiliava|ajudava|atuava|participava|tarefas?:)/
 
 export function buildResume(profile: Profile, job: Job, match: MatchResult): { resume: Resume; tips: string[] } {
@@ -61,30 +51,60 @@ export function buildResume(profile: Profile, job: Job, match: MatchResult): { r
 
   const title = job.title.trim() || profile.headline
 
-  // Competências: primeiro as que a vaga pede (com o nome que a vaga usa), depois as demais do perfil.
+  // Competências: primeiro as técnicas que a vaga pede (com o nome que a vaga usa), depois as demais do perfil,
+  // e por último as comportamentais com o nome simples ("Comunicação", não "Boa comunicação").
+  // Idiomas ficam só na seção de idiomas.
+  const entryOf = (s: string) => dict.find((e) => e.terms.includes(fold(s.trim())))
   const matchedKeys = new Set(m.map((k) => k.key))
-  const label = (k: KeywordHit) => (k.levelGap ? k.ownLabel! : k.label)
-  const fromJob = [...m].sort((a, b) => Number(b.required) - Number(a.required)).map(label)
-  const others = profile.skills.filter((s) => {
-    const entry = dict.find((e) => e.terms.includes(fold(s.trim())))
-    return !matchedKeys.has(entry?.key ?? fold(s))
-  })
-  const skills = [...fromJob, ...others].slice(0, Math.max(fromJob.length, 12))
+  const entryKey = (k: KeywordHit) => dict.find((e) => e.key === k.key)
+  // Na lista, vale o termo da vaga; mas um pedaço solto como "contábil" (de "fechamento contábil") vira o nome da competência.
+  const label = (k: KeywordHit) => {
+    if (k.levelGap) return k.ownLabel!
+    const entry = entryKey(k)
+    const loose = entry && fold(k.label) !== entry.key && !/\s/.test(k.label.trim()) && compact(k.label) !== compact(entry.label)
+    return loose ? entry.label : k.label
+  }
+  // No meio da frase, nome comum vai em minúscula: "domínio de SQL e conciliação bancária".
+  const inSentence = (k: KeywordHit) => {
+    const l = label(k)
+    return entryKey(k)?.common && /^\p{Lu}\p{Ll}/u.test(l) ? l[0].toLowerCase() + l.slice(1) : l
+  }
+  const byRequired = [...m].sort((a, b) => Number(b.required) - Number(a.required))
+  const hardFromJob = byRequired.filter((k) => k.kind === 'hard').map(label)
+  const softFromJob = byRequired.filter((k) => k.kind === 'soft').map((k) => dict.find((e) => e.key === k.key)?.label ?? k.label)
+  const others = profile.skills.filter((s) => !matchedKeys.has(entryOf(s)?.key ?? fold(s)) && entryOf(s)?.kind !== 'language')
+  const otherHard = others.filter((s) => entryOf(s)?.kind !== 'soft')
+  const otherSoft = others.filter((s) => entryOf(s)?.kind === 'soft')
+  const limit = Math.max(hardFromJob.length + softFromJob.length, 12)
+  const skills = [...hardFromJob, ...otherHard, ...softFromJob, ...otherSoft].slice(0, limit)
 
-  // Resumo de 3 linhas: quem você é, o que domina (na língua da vaga) e o que entrega.
-  const years = yearsOfExperience(profile)
-  const course = profile.education[0]?.course.replace(/^(tecn[oó]logo|bacharelado|graduação|licenciatura|técnico|mba|pós-graduação|especialização)\s+(em|de)\s+/i, '')
-  const who = profile.headline.trim() || title
-  const line1 = `${who}${years >= 1 ? ` com ${years} ${years === 1 ? 'ano' : 'anos'} de experiência` : ''}${course ? `, formação em ${course}` : ''}.`
-  // "Domínio de..." cita ferramentas que você declarou, não conceitos genéricos como "Painéis".
-  const declared = new Set(profile.skills.map((s) => dict.find((e) => e.terms.includes(fold(s.trim())))?.key ?? fold(s)))
+  // Resumo: "Domínio de..." cita ferramentas que você declarou, não conceitos genéricos como "Painéis".
+  const declared = new Set(profile.skills.map((s) => entryOf(s)?.key ?? fold(s)))
   const hard = m.filter((k) => k.kind === 'hard')
-  const tools = hard.filter((k) => declared.has(k.key))
-  const top = (tools.length ? tools : hard).map(label).slice(0, 5)
-  if (!top.length) top.push(...profile.skills.slice(0, 5))
-  const line2 = top.length ? `Domínio de ${joinPt(top)}.` : ''
-  const line3 = profile.about.trim() ? spell(firstSentence(profile.about)) : ''
-  const summary = [line1, line2, line3].filter(Boolean).join(' ')
+  const declaredHard = hard.filter((k) => declared.has(k.key))
+  // Ferramentas antes de áreas: "Domínio de Excel, SAP FI e Power BI" lê melhor que começar por "contabilidade".
+  const pool = (declaredHard.length ? declaredHard : hard).sort((a, b) => Number(entryKey(a)?.common ?? false) - Number(entryKey(b)?.common ?? false))
+  const toolHits = pool.filter((k) => k.required)
+  const extraHits = pool.filter((k) => !k.required)
+  const tools = (toolHits.length ? toolHits : extraHits).map(inSentence)
+  const extras = toolHits.length ? extraHits.map(inSentence) : []
+  if (!tools.length) tools.push(...profile.skills.filter((s) => entryOf(s)?.kind === 'hard' || !entryOf(s)).slice(0, 5))
+  const education = [...profile.education].sort((a, b) => relevance(b.course, m, dict) - relevance(a.course, m, dict))[0]
+  const bestBullet = profile.experiences
+    .flatMap((e) => e.bullets)
+    .filter(hasNumber)
+    .sort((a, b) => relevance(b, m, dict) - relevance(a, m, dict))[0]
+  const summary = composeSummary({
+    profile,
+    title,
+    tools,
+    extras,
+    usedAtWork: [...toolHits, ...extraHits].some((k) => k.evidence.includes('experiência')),
+    newArea: (match.breakdown.find((b) => b.label === 'Cargo e área')?.score ?? 0) === 0,
+    education,
+    bestBullet: bestBullet && spell(bestBullet),
+    about: spell(profile.about),
+  })
 
   const experiences = profile.experiences.map((e, i) => {
     const ranked = e.bullets

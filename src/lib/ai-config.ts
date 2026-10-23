@@ -1,3 +1,9 @@
+/**
+ * A integração com IA está pronta mas desligada: o app roda só com o motor local.
+ * Para religar o botão "Gerar com IA" e a tela da chave da API, troque para true.
+ */
+export const AI_ENABLED = false
+
 // Separado de ai.ts para que o SDK da Anthropic só seja baixado quando a IA for usada.
 export const MODELS = [
   { id: 'claude-opus-5-5', label: 'Claude Opus 5.5 (melhor qualidade)' },

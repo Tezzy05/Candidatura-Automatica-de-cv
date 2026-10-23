@@ -100,8 +100,16 @@ describe('tailorLocal', () => {
     const t2 = tailorLocal(sampleProfile, { ...sampleJob, description: 'Requisitos:\n- SQL\n- Inglês avançado' })
     const hit = t2.match.matched.find((k) => k.key === 'ingles')
     expect(hit?.levelGap).toBe(true)
-    expect(t2.resume.skills).toContain('Inglês intermediário')
-    expect(t2.resume.skills).not.toContain('Inglês avançado')
+    expect(t2.resume.skills.join(' ')).not.toMatch(/Inglês/)
+    expect(t2.resume.languages).toContain('Inglês intermediário')
+    expect(t2.tips.join(' ')).toContain('Inglês intermediário')
+  })
+
+  it('nível acima do pedido atende a vaga', () => {
+    const fluent = { ...sampleProfile, languages: ['Inglês avançado'] }
+    const t3 = tailorLocal(fluent, { ...sampleJob, description: 'Requisitos:\n- SQL\n- Inglês intermediário' })
+    expect(t3.match.matched.find((k) => k.key === 'ingles')?.levelGap).toBeUndefined()
+    expect(t3.tips.join(' ')).not.toMatch(/mantém o seu nível/)
   })
 
   it('deixa competências comportamentais fora do "Domínio de..."', () => {

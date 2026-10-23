@@ -153,6 +153,26 @@
   color: var(--muted-foreground);
 }
 
+/* Texto editável na prévia do currículo. */
+.cv-edit {
+  border-radius: 2px;
+  outline: 1px solid transparent;
+  outline-offset: 2px;
+  transition: outline-color 0.15s, background-color 0.15s;
+  cursor: text;
+}
+.cv-edit:hover {
+  outline-color: color-mix(in srgb, #3341e6 35%, transparent);
+}
+.cv-edit:focus {
+  outline-color: #3341e6;
+  background: color-mix(in srgb, #3341e6 6%, transparent);
+}
+.cv-edit:empty::before {
+  content: attr(data-placeholder);
+  color: #a8a8a8;
+}
+
 /* Impressão: só a folha do currículo, em A4, uma página. O PDF sai com texto de verdade (lido pelo ATS). */
 @page {
   size: A4;

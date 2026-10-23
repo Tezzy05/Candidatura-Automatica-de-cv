@@ -1,0 +1,26 @@
+Contato
+joao.souza@outlook.com
+www.linkedin.com/in/joaosouza-dev
+Principais competências
+React
+TypeScript
+Node.js
+Idiomas
+Inglês (Professional Working)
+João Souza
+Desenvolvedor Front-end | React | TypeScript
+Campinas, São Paulo, Brasil
+Resumo
+Desenvolvedor front-end que gosta de interfaces rápidas e acessíveis.
+Experiência
+Empresa Gama
+Desenvolvedor Front-end
+abril de 2023 - o momento (1 ano 7 meses)
+Campinas, São Paulo, Brasil
+Migrei 40 telas de AngularJS para React, reduzindo o tempo de carregamento em 35%.
+Estagiário de Desenvolvimento
+agosto de 2021 - março de 2023 (1 ano 8 meses)
+Criei testes automatizados com Jest para o checkout.
+Formação acadêmica
+Universidade Estadual de Campinas
+Bacharelado, Ciência da Computação · (2019 - 2023)

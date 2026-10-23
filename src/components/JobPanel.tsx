@@ -1,12 +1,12 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { Copy, Download, Loader2, Sparkles, TriangleAlert, Wand2 } from 'lucide-react'
+import { Copy, Download, Loader2, Pencil, Sparkles, TriangleAlert, Undo2, Wand2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import type { AiSettings } from '@/lib/ai-config'
+import { AI_ENABLED, type AiSettings } from '@/lib/ai-config'
 import { tailorLocal } from '@/lib/tailor'
 import type { Job, Profile, Tailored } from '@/lib/types'
 import { pdfFileName, resumeToText } from '@/lib/export'
@@ -29,12 +29,14 @@ interface Props {
   onJobChange: (j: Job) => void
   result: Tailored | null
   onResult: (t: Tailored) => void
+  /** Edição feita direto na prévia do currículo. */
+  onEdit: (t: Tailored) => void
   settings: AiSettings
   onNeedKey: () => void
   onGoToProfile: () => void
 }
 
-export function JobPanel({ profile, job, onJobChange, result, onResult, settings, onNeedKey, onGoToProfile }: Props) {
+export function JobPanel({ profile, job, onJobChange, result, onResult, onEdit, settings, onNeedKey, onGoToProfile }: Props) {
   const [busy, setBusy] = useState(false)
   const [overflow, setOverflow] = useState(false)
   const set = (k: keyof Job) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onJobChange({ ...job, [k]: e.target.value })
@@ -113,10 +115,12 @@ export function JobPanel({ profile, job, onJobChange, result, onResult, settings
             <Button className="flex-1" size="lg" disabled={!ready || busy} onClick={() => generate(false)}>
               <Wand2 /> Analisar e gerar
             </Button>
-            <Button className="flex-1" size="lg" variant="outline" disabled={!ready || busy} onClick={() => generate(true)}>
-              {busy ? <Loader2 className="animate-spin" /> : <Sparkles />}
-              {busy ? 'Escrevendo...' : 'Gerar com IA'}
-            </Button>
+            {AI_ENABLED && (
+              <Button className="flex-1" size="lg" variant="outline" disabled={!ready || busy} onClick={() => generate(true)}>
+                {busy ? <Loader2 className="animate-spin" /> : <Sparkles />}
+                {busy ? 'Escrevendo...' : 'Gerar com IA'}
+              </Button>
+            )}
           </div>
           {!ready && <p className="text-xs text-muted-foreground">Preencha o título e cole a descrição da vaga.</p>}
         </section>
@@ -183,6 +187,11 @@ export function JobPanel({ profile, job, onJobChange, result, onResult, settings
                 Currículo · {result.engine === 'ia' ? 'escrito com IA' : 'motor local'}
               </p>
               <div className="flex gap-2">
+                {result.original && (
+                  <Button variant="ghost" size="sm" onClick={() => onEdit({ ...result, resume: result.original!, original: undefined })}>
+                    <Undo2 /> Desfazer edições
+                  </Button>
+                )}
                 <Button variant="outline" size="sm" onClick={copyText}>
                   <Copy /> Copiar texto
                 </Button>
@@ -193,10 +202,18 @@ export function JobPanel({ profile, job, onJobChange, result, onResult, settings
             </div>
             {overflow && (
               <p className="flex items-center gap-1.5 text-xs text-warn">
-                <TriangleAlert className="size-3.5" /> Passou de 1 página. Encurte conquistas antigas ou projetos no perfil.
+                <TriangleAlert className="size-3.5" /> Passou de 1 página (linha vermelha). Apague tópicos menos importantes direto na folha ou encurte no perfil.
               </p>
             )}
-            <ResumePaper resume={result.resume} onOverflow={setOverflow} />
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Pencil className="size-3.5" /> Clique em qualquer texto do currículo para ajustar. Enter confirma, Esc cancela. Apagar
+              um tópico inteiro remove o tópico.
+            </p>
+            <ResumePaper
+              resume={result.resume}
+              onOverflow={setOverflow}
+              onEdit={(resume) => onEdit({ ...result, resume, original: result.original ?? result.resume })}
+            />
             <p className="text-xs text-muted-foreground">
               No diálogo de impressão, escolha <strong>Salvar como PDF</strong>. O arquivo sai como {pdfFileName(result.resume)}.pdf, com texto
               selecionável (o robô de triagem lê).

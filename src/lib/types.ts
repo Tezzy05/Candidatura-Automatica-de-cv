@@ -11,6 +11,8 @@ export interface Profile {
   headline: string
   /** Texto livre sobre você. Serve de matéria-prima para o resumo de 3 linhas. */
   about: string
+  /** Concordância usada nas frases geradas: "formado", "formada" ou neutro ("com formação em"). */
+  gender: Gender
   skills: string[]
   experiences: Experience[]
   projects: Project[]
@@ -18,6 +20,8 @@ export interface Profile {
   languages: string[]
   certifications: string[]
 }
+
+export type Gender = 'masculino' | 'feminino' | 'neutro'
 
 export interface Experience {
   id: string
@@ -102,6 +106,8 @@ export interface Tailored {
   job: Job
   match: MatchResult
   resume: Resume
+  /** Currículo como saiu do gerador, antes das suas edições na prévia. */
+  original?: Resume
   /** Dicas do que melhorar no perfil (nunca inventadas no currículo). */
   tips: string[]
   engine: 'local' | 'ia'

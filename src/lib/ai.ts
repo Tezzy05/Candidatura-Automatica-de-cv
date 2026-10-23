@@ -170,6 +170,7 @@ export async function importProfileWithAI(settings: AiSettings, text: string): P
   const out = await ask(settings, ProfileSchema, IMPORT_SYSTEM, `<texto>\n${text}\n</texto>`)
   return {
     ...out,
+    gender: 'neutro',
     experiences: out.experiences.map((e) => ({ ...e, id: uid() })),
     projects: out.projects.map((p) => ({ ...p, id: uid() })),
     education: out.education.map((e) => ({ ...e, id: uid() })),

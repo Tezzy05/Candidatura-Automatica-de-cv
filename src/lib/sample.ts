@@ -9,6 +9,7 @@ export const emptyProfile = (): Profile => ({
   links: [],
   headline: '',
   about: '',
+  gender: 'neutro',
   skills: [],
   experiences: [],
   projects: [],
@@ -26,6 +27,7 @@ export const sampleProfile: Profile = {
   linkedin: 'linkedin.com/in/seunome',
   links: [],
   headline: 'Analista de dados',
+  gender: 'masculino',
   about: 'Entrego painéis e automações que cortam retrabalho. Gosto de transformar planilhas soltas em indicadores que a gerência usa para decidir.',
   skills: ['SQL', 'PowerBI', 'Python', 'Excel avançado', 'Comunicação', 'Trabalho em equipe'],
   experiences: [

@@ -1,0 +1,29 @@
+MARIA SILVA
+Analista Financeira
+São Paulo - SP | (11) 98765-4321 | maria.silva@gmail.com | linkedin.com/in/mariasilva
+CPF: 123.456.789-00 | 28 anos | Solteira
+
+RESUMO PROFISSIONAL
+Analista financeira com foco em controladoria e indicadores. Reduzo prazos de fechamento com automação.
+
+EXPERIÊNCIA PROFISSIONAL
+Analista Financeira Pleno – Banco Alfa | mar/2022 – atual
+• Reduzi o fechamento mensal de 8 para 5 dias automatizando conciliações em Excel e Power Query.
+• Criei 6 dashboards em Power BI para a diretoria
+acompanhar o fluxo de caixa.
+Assistente Financeiro – Comércio Beta | jan/2019 – fev/2022
+• Responsável por contas a pagar e a receber.
+• Conciliei 300 lançamentos bancários por mês.
+
+FORMAÇÃO ACADÊMICA
+Bacharelado em Ciências Contábeis – Universidade Presbiteriana Mackenzie – 2015 a 2019
+
+COMPETÊNCIAS
+Excel avançado, Power BI, SAP FI, Contas a pagar, Fluxo de caixa, Conciliação bancária
+
+IDIOMAS
+Inglês avançado; Espanhol intermediário
+
+CURSOS E CERTIFICAÇÕES
+CPA-20 (Anbima)
+Power BI Essentials – Udemy

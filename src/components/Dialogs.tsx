@@ -6,7 +6,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { MODELS, type AiSettings } from '@/lib/ai-config'
+import { AI_ENABLED, MODELS, type AiSettings } from '@/lib/ai-config'
+import { importProfileText } from '@/lib/importer'
 import type { Profile } from '@/lib/types'
 
 interface DialogProps {
@@ -68,15 +69,25 @@ export function ImportDialog({ open, onOpenChange, settings, onImport, onNeedKey
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
 
-  const run = async () => {
+  const done = (p: Profile, found?: string[]) => {
+    onImport(p)
+    toast.success(found?.length ? `Encontrei: ${found.join(', ')}. Revise os campos.` : 'Perfil importado. Revise e complete o que faltar.')
+    setText('')
+    onOpenChange(false)
+  }
+
+  const runLocal = () => {
+    const { profile, found } = importProfileText(text)
+    if (found.length < 2) return toast.error('Não reconheci quase nada nesse texto. Confira se colou o currículo inteiro.')
+    done(profile, found)
+  }
+
+  const runAI = async () => {
     if (!settings.apiKey) return onNeedKey()
     setBusy(true)
     const ai = await import('@/lib/ai')
     try {
-      onImport(await ai.importProfileWithAI(settings, text))
-      toast.success('Perfil importado. Revise e complete o que faltar.')
-      setText('')
-      onOpenChange(false)
+      done(await ai.importProfileWithAI(settings, text))
     } catch (err) {
       toast.error(ai.friendlyError(err))
     } finally {
@@ -90,15 +101,21 @@ export function ImportDialog({ open, onOpenChange, settings, onImport, onNeedKey
         <DialogHeader>
           <DialogTitle>Importar currículo antigo</DialogTitle>
           <DialogDescription>
-            Cole o texto do seu currículo atual ou do seu perfil do LinkedIn. A IA organiza tudo nos campos do perfil. O perfil atual
-            será substituído.
+            Cole o texto do seu currículo atual (Word ou PDF: selecione tudo e copie) ou do PDF do seu perfil do LinkedIn. O sistema separa
+            contato, experiências, formação e competências; depois você revisa os campos. CPF, idade e estado civil são descartados. O
+            perfil atual será substituído.
           </DialogDescription>
         </DialogHeader>
-        <Textarea rows={14} value={text} onChange={(e) => setText(e.target.value)} placeholder="Cole aqui..." className="max-h-[50vh]" />
+        <Textarea rows={14} value={text} onChange={(e) => setText(e.target.value)} placeholder="Cole aqui..." className="max-h-[50vh] font-mono text-xs" />
         <DialogFooter>
-          <Button onClick={run} disabled={busy || text.trim().length < 40}>
-            {busy && <Loader2 className="animate-spin" />}
-            {busy ? 'Organizando...' : 'Importar com IA'}
+          {AI_ENABLED && (
+            <Button variant="outline" onClick={runAI} disabled={busy || text.trim().length < 40}>
+              {busy && <Loader2 className="animate-spin" />}
+              {busy ? 'Organizando...' : 'Importar com IA'}
+            </Button>
+          )}
+          <Button onClick={runLocal} disabled={busy || text.trim().length < 40}>
+            Importar
           </Button>
         </DialogFooter>
       </DialogContent>
